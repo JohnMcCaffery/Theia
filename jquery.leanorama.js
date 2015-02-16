@@ -65,7 +65,7 @@ Version 0.2.0
             delay                       : 25,
             perspective                 : 645,
             orientation                 : 0,
-
+	    
             // Internals
             dlan                        : 0,
             dlon                        : 0,
@@ -97,7 +97,7 @@ Version 0.2.0
             ,   dlat                            // difference between lat and its previous value
             ,   drot
             ;
-            
+	
             // To be called when a zoom(in/out) control is pressed
             // On each animation interval, scale will be multiplied by `val`
             this.scale_start = function(dscale) {
@@ -541,195 +541,7 @@ Version 0.2.0
     
     // Register the basic Leanorama extensions
     $.fn.leanorama.extensions = [ext_ctrl, ext_ctrl_mouse, ext_ctrl_kbd, ext_ctrl_touch];
-    
-    // Add gyro if supported
-    if (window.DeviceOrientationEvent) {
 
-        // Gyro control extension
-        var ext_ctrl_gyro = function() {
-            var $el     = this.$el
-    
-            // Gyro stuff
-            ,   gyro        = true              // Indicates whether gyro is active    
-            ,   alpha0      = 0                 // Initial alpha (horizontal device rotation)
-            ,   beta0       = 0
-            ,   gamma0      = 0                 // Initial gamma (vertical device tilt)
-            ,   was_gyro    = false             // Indicates whether gyro control should be restored
-            ,   alphas      = []                // Used for horizontal stabilization
-            ,   betas       = []
-            ,   gammas      = []                // Used for vertical stabilization
-            ,   moving      = false             // Indicates whether already in a middle of gyro event
-            ,   rotated     = false
-            ;
-            
-            $.extend(this, {
-                EV_CONTROLS_GYRO_ON     : 'leanoramaControlsGyroOn',
-                EV_CONTROLS_GYRO_OFF    : 'leanoramaControlsGyroOff',
-            });
-            
-            // deviceorientation - Gyro support
-            function deviceorientation(e) {
-                
-                if (this.autorotate) return;
-                // Make sure we're done processing previous events
-                if (moving) return;
-                moving = true;
-    
-                e.preventDefault();
-                var ev = e.originalEvent;
-                
-                // Make sure gyro is actually reports something
-                if (!(ev.alpha || ev.beta || ev.gamma)) {
-                    this.gyro = false;
-                    this.unbind_gyro();
-                    return;
-                }
-                
-                // If this is the first time the event fires, remember initial values
-                if (!alpha0) {
-                    alpha0 = alpha0 || ev.alpha;
-                    gamma0 = gamma0 || 0; 
-                    alphas.length = this.gyrostab;
-                    betas.length = this.gyrostab;
-                    gammas.length = this.gyrostab;
-                    if(ev.beta > 45)
-                            rotated = true;
-                    else
-                            rotated = false;
-                }
-    
-                var alpha = 0, beta = 0, gamma = 0;
-                
-                // Calculating the average of the last `gyrostab` locations... hack hack hack
-                for (i=1; i<alphas.length; i++) {
-                    if (Math.abs(alphas[alphas.length - 1] - ev.alpha) < 100) alphas[i-1] = alphas[i] || ev.alpha;
-                    else alphas[i-1] = ev.alpha;
-                    if (Math.abs(betas[betas.length - 1] - ev.beta) < 100) betas[i-1] = betas[i] || ev.beta;
-                    else betas[i-1] = ev.beta;
-                    if (Math.abs(gammas[gammas.length - 1] - ev.gamma) < 100) gammas[i-1] = gammas[i] || 0;
-                    else gammas[i-1] = ev.gamma;
-                    alpha += alphas[i-1];
-                    beta  += betas[i-1];
-                    gamma += gammas[i-1];
-                }
-                
-                // ... hack hack hack ...
-                alphas[alphas.length ? alphas.length - 1 : 0] = ev.alpha;
-                betas[betas.length ? betas.length - 1 : 0] = ev.beta;
-                gammas[gammas.length ? gammas.length - 1 : 0] = ev.gamma;
-                alpha = (alpha + alphas[alphas.length - 1]) / alphas.length;
-                beta = (beta + betas[betas.length - 1]) / betas.length;
-                gamma = (gamma + gammas[gammas.length - 1]) / gammas.length;
-    
-                if(!rotated) {
-                // Making sure we don't encounter weird angles
-                if (gamma >= -180 && gamma <=  180) {
-                        this.lat = Math.abs(gamma) - 90 + gamma0;
-                }
-                if (gamma >   180 || gamma <  -180) {
-                        this.lat = 270 - Math.abs(gamma) + gamma0;
-                        
-                }
-                
-                if(gamma < 0 || gamma > 180) {
-                        this.rot = degnormalize(beta0 - beta);
-                } else {
-                        this.rot = degnormalize(beta0 + beta);
-                }
-                this.lon = degnormalize(alpha0 - alpha + 90);
-                } else {
-                        if(gamma > -90 && gamma < 90) {
-                        // Making sure we don't encounter weird angles
-                        if (beta >= -180 && beta <=  180) {
-                                this.lat = Math.abs(beta) - 90 + beta0;
-                        }
-                        if (beta >   180 || beta <  -180) {
-                                this.lat = 270 - Math.abs(beta) + beta0;
-                                
-                        }
-                        this.lon = degnormalize(alpha0 - alpha + 90);
-                        } else {
-                                if (beta >= -180 && beta <=  180) {
-                                        this.lat = 90 - Math.abs(beta) + beta0;
-                                }
-                                if (beta >   180 || beta <  -180) {
-                                        this.lat = Math.abs(beta) - 270 + beta0;
-                                        
-                                }
-                                this.lon = degnormalize(alpha0 - alpha - 90);
-                        }
-                        
-//                         if(gamma > -90 && gamma < 90) {
-//                                 this.rot = degnormalize( gamma);
-//                         } else {
-//                                 this.rot = degnormalize(gamma - 180);
-//                         }
-                        //this.rot = degnormalize(beta0 - beta - 90);
-                        
-                }
-                // Move
-//                 if(this.orientation == -90) {
-//                         
-//                         // Making sure we don't encounter weird angles
-//                         if (gamma >= -180 && gamma <=  180) this.lat = Math.abs(gamma) - 90 + gamma0;
-//                         if (gamma >   180 || gamma <  -180) this.lat = 270 - Math.abs(gamma) + gamma0;
-//                                 this.lon = degnormalize(alpha0 - alpha + 90);
-//                                 this.rot = degnormalize(beta0 + beta);
-//                 } else if(this.orientation == 0) {
-//                                  
-//                 } else if(this.orientation == 90) {
-//                                 // Making sure we don't encounter weird angles
-//                                 if (gamma >= -180 && gamma <=  180) this.lat = Math.abs(gamma) - 90 + gamma0;
-//                                 if (gamma >   180 || gamma <  -180) this.lat = 270 - Math.abs(gamma) + gamma0;
-//                                 this.lon = degnormalize(alpha0 - beta + 90);
-//                                 this.rot = degnormalize(beta0 - beta);
-//                 } else if(this.orientation == 180) {
-//                                 this.lon = degnormalize(alpha0 - beta + 90);
-//                                 this.rot = degnormalize(alpha0 + alpha);
-//                 }
-                moving = false;
-            }
-    
-            this.bind_gyro = function() {
-                if (this.autorotate) return;
-                this.gyro = true;
-                alpha0 = undefined;
-                gamma0 = undefined;
-                $(window).bind('deviceorientation.leanorama', $.proxy(deviceorientation, this));
-                $el.trigger(this.EV_CONTROLS_GYRO_ON);
-                $el.bind(this.EV_VIEW_TRANSITION_STARTED, $.proxy(this.suspend_gyro, this));
-            };
-    
-            this.unbind_gyro = function() {
-                if (!this.gyro) return;
-                $(window).unbind('deviceorientation.leanorama');
-                this.gyro = false;
-                $el.trigger(this.EV_CONTROLS_GYRO_OFF);
-                $el.unbind(this.EV_VIEW_TRANSITION_STARTED);
-                $el.unbind(this.EV_VIEW_TRANSITION_STOPPED);
-            };
-            
-            this.suspend_gyro = function() {
-                //was_gyro = this.gyro;
-                this.unbind_gyro();
-                $el.bind(this.EV_VIEW_TRANSITION_STOPPED, $.proxy(this.restore_gyro, this));
-            };
-            
-            this.restore_gyro = function() {
-                //was_gyro && 
-                this.bind_gyro();
-            };
-            
-                
-            this.bind_functions.gyro   = this.bind_gyro;
-            this.unbind_functions.gyro = this.unbind_gyro; 
-        };
-    
-        // Register Gyro to the Leanorama extensions
-        $.fn.leanorama.extensions.push(ext_ctrl_gyro);
-
-    }
-   
     
     // Helper functions
     function div(attrs) {
