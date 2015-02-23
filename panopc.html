@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="description" content="Leanorama - Panoramic images viewer">
+        <meta name="viewport" content="width=device-width">
+        
+        <title>PANORAMA</title>
+
+        <script src="js/jquery-1.11.2.min.js"></script>
+        <script src="js/bootstrap.min.js"></script>
+        <script src="js/jquery.transit.js"></script>
+        <script src="js/jquery.leanorama.js"></script>
+        <script src="js/jquery.leanorama.hotspot.js"></script>
+        <script src="js/jquery.leanorama.controlbar.js"></script>
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/index.css">
+        <link rel="stylesheet" href="css/leanorama.css">
+        <link rel="stylesheet" href="css/leanorama.hotspot.css">
+        <link rel="stylesheet" href="css/leanorama.controlbar.css">
+    </head>
+    <body>
+		<div id="panol-outer" style="z-index:2; float:left; width:100%; height:100%; left:0; overflow:hidden; position:absolute; background-color:#000000;">
+			<div id="panol" class="panoContainer" >I'm on the left</div>
+		</div>
+		
+		
+		<script type="text/javascript">
+			var separation, panoDivL, panol;
+			var tour = 
+			{
+				pano1: 
+				{
+					autorotate: 0.1,
+					sides: [
+						'images/Front-L.png',
+						'images/Left-L.png',
+						'images/Back-L.png',
+						'images/Right-L.png',
+						'images/Up-L.png',
+						'images/Down-L.png'
+					],
+					
+					touch: true,
+					gyro: true,
+					delay: 30,
+					
+					hotspots: [
+						{ // Navigation to pano2
+							type: 'nav',
+							face: 0,
+							x: 500,
+							y: 500,
+							id: 'toStSallys',
+							name: 'Go to St Salvators Chapel',
+							value: 'pano2'
+						},
+						{ // Link 
+							type: 'link',
+							face: 0,
+							x: 600,
+							y: 500,
+							id: 'website-link',
+							name: 'Our website',
+							value:'http://openvirtualworlds.org'
+						},
+						{ // An info popup 
+							type: 'info',
+							face: 0,
+							x: 700,
+							y: 500,
+							id: 'info-video',
+							name: 'Cathedral video',
+							value: '<div id="blah" style="text-align: center">\
+								<iframe width="200" height="113" src="//player.vimeo.com/video/77928887" frameborder="0" allowfullscreen></iframe>\
+								<br><br>Reconstruction of the St Andrews Cathedral (1318)<br><br>\
+								</div>'
+								
+						}
+					]
+				},
+				
+				pano2: 
+				{
+					autorotate: 0.1,
+					sides: [
+						'images/St_Salvators_Front.jpg',
+						'images/St_Salvators_Left.jpg',
+						'images/St_Salvators_Back.jpg',
+						'images/St_Salvators_Right.jpg',
+						'images/St_Salvators_Up.jpg',
+						'images/St_Salvators_Down.jpg'
+					],
+					
+					touch: true,
+					gyro: true,
+					delay: 30,
+					
+					hotspots: [ 
+						{ // Navigation to pano1
+							type: 'nav',
+							face: 0,
+							x: 500,
+							y: 500,
+							id: 'toCathedral',
+							name: 'Go to Cathedral',
+							value: 'pano1'
+						},
+						{ // Link 
+							type: 'link',
+							face: 0,
+							x: 600,
+							y: 500,
+							id: 'website-link',
+							name: 'Our website',
+							value:'http://openvirtualworlds.org'
+						},
+						{ // An info popup 
+							type: 'info',
+							face: 0,
+							x: 700,
+							y: 500,
+							id: 'info-video',
+							name: 'St Salvators video',
+							value: '<div id="blah" style="text-align: center">\
+								<iframe width="200" height="113" src="//player.vimeo.com/video/77928887" frameborder="0" allowfullscreen></iframe>\
+								<br><br>Reconstruction of the St Andrews Cathedral (1318)<br><br>\
+								</div>'
+								
+						}
+					]
+				}
+			};
+						
+			$(document).ready(function()
+			{
+				panoDivL = $('#panol');
+				
+				panol = $(panoDivL).leanorama(tour.pano1);
+				panol.on('leanoramaHotspotClick', function(e, hotspot) {
+					if (hotspot.type == 'nav') 
+					{
+						$(this).trigger('leanoramaRefresh', tour[hotspot.value]);
+					}
+				});
+							
+				animate();
+			});
+				
+			
+			function animate() {
+			  requestAnimationFrame(animate); 
+			}
+						
+			$( window ).resize(function() 
+			{
+				location.reload();
+			});
+			
+			window.addEventListener( 'orientationchange', function(){
+			location.reload();}, 
+			false );
+			
+		</script>
+    </body>
+</html>
